@@ -1,0 +1,18 @@
+# Ignore __pycache__ and compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environments
+venv/
+env/
+
+# Ignore ALL runtime-created folders (including /data/)
+# Ignore every folder in the project root:
+*/ 
+
+# Allow these files to be tracked:
+!.gitignore
+!LICENSE.txt
+!*.py
