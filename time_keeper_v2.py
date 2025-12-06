@@ -346,3 +346,106 @@ def list_all_users_summary(data: dict) -> None:
 
     print()
 
+
+
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~#
+#   ╦═╗┌─┐┌─┐┌─┐┬─┐┌┬┐┌─┐   #
+#   ╠╦╝├┤ ├─┘│ │├┬┘ │ └─┐   #
+#   ╩╚═└─┘┴  └─┘┴└─ ┴ └─┘   #
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~#
+
+
+
+def time_report(user_data: dict, username: str, days: int) -> None:
+
+    """
+    Display a time report for the specified user covering the last N days.
+
+    Parameters:
+      user_data (dict): The dictionary for this user containing:
+                        - "sessions": list of session records
+      username (str):   The user whose report is being displayed.
+      days (int):       How many days of history to include.
+
+    Returns:
+      None: This function prints a formatted report.
+    """
+
+    sessions = user_data.get("sessions", [])
+    if not sessions:
+        print(f"\nNo sessions logged yet for {username}.\n")
+        return
+
+    now = datetime.now()
+    cutoff = now - timedelta(days=days)
+
+    # Gather only sessions whose end timestamp is within the cutoff window
+    filtered = []
+    for session in sessions:
+        end_str = session.get("end") or session.get("start")
+        try:
+            end_dt = datetime.fromisoformat(end_str)
+        except Exception:
+            continue
+
+        if end_dt >= cutoff:
+            filtered.append(session)
+
+    if not filtered:
+        print(f"\nNo sessions for {username} in the last {days} days.\n")
+        return
+
+    total_minutes = sum(s["duration_minutes"] for s in filtered)
+    total_hours = round(total_minutes / 60, 2)
+
+    label = {
+        1: "Last 24 hours",
+        7: "Last 7 days",
+        30: "Last 30 days",
+    }.get(days, f"Last {days} days")
+
+    print(f"\n=== {label} Report for {username} ===")
+    print(f"Sessions:      {len(filtered)}")
+    print(f"Total minutes: {total_minutes}")
+    print(f"Total hours:   {total_hours}")
+
+    print("\nSessions:")
+    for s in filtered:
+        print(f"  {s['start']} -> {s['end']}  ({s['duration_minutes']} min)")
+    print()
+
+
+def report_menu(user_data: dict, username: str) -> None:
+
+    """
+    Display a sub-menu of time reports (daily, weekly, monthly)
+    and allow the user to choose which report to view.
+
+    Parameters:
+      user_data (dict): The dictionary for this user containing session records.
+      username (str):   The user requesting the reports.
+
+    Returns:
+      None: This function prints menu options and calls report functions.
+    """
+
+    while True:
+        print(f"\n *_* Reports for {username} *_*")
+        print("1) Last 24 hours")
+        print("2) Last 7 days")
+        print("3) Last 30 days")
+        print("4) Back to main menu")
+
+        choice = input("Enter choice: ").strip()
+
+        if choice == "1":
+            time_report(user_data, username, days=1)
+        elif choice == "2":
+            time_report(user_data, username, days=7)
+        elif choice == "3":
+            time_report(user_data, username, days=30)
+        elif choice == "4":
+            break
+        else:
+            print("\nInvalid choice.\n")
+
