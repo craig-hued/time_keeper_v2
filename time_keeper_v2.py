@@ -43,6 +43,8 @@
 #
 #~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 
+
+
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -53,9 +55,11 @@ BASE_DIR = Path(__file__).parent  # folder where this script lives
 
 
 
-#   ╔═╗┌─┐┌┬┐┬ ┬  ╦ ╦┌─┐┬  ┌─┐┌─┐┬─┐┌─┐
-#   ╠═╝├─┤ │ ├─┤  ╠═╣├┤ │  ├─┘├┤ ├┬┘└─┐
-#   ╩  ┴ ┴ ┴ ┴ ┴  ╩ ╩└─┘┴─┘┴  └─┘┴└─└─┘
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~#
+#   ╔═╗┌─┐┌┬┐┬ ┬  ╦ ╦┌─┐┬  ┌─┐┌─┐┬─┐┌─┐     #
+#   ╠═╝├─┤ │ ├─┤  ╠═╣├┤ │  ├─┘├┤ ├┬┘└─┐     #
+#   ╩  ┴ ┴ ┴ ┴ ┴  ╩ ╩└─┘┴─┘┴  └─┘┴└─└─┘     #
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~#
 
 
 
@@ -98,9 +102,11 @@ def get_log_file(project_name: str, custom_folder_path: str | None) -> Path:
 
 
 
-#   ╔═╗┌─┐┬  ┬┌─┐   ┬   ╦  ┌─┐┌─┐┌┬┐
-#   ╚═╗├─┤└┐┌┘├┤   ┌┼─  ║  │ │├─┤ ││
-#   ╚═╝┴ ┴ └┘ └─┘  └┘   ╩═╝└─┘┴ ┴─┴┘
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~#
+#   ╔═╗┌─┐┬  ┬┌─┐   ┬   ╦  ┌─┐┌─┐┌┬┐    #
+#   ╚═╗├─┤└┐┌┘├┤   ┌┼─  ║  │ │├─┤ ││    #
+#   ╚═╝┴ ┴ └┘ └─┘  └┘   ╩═╝└─┘┴ ┴─┴┘    #
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~#
 
 
                                                                                             
@@ -154,6 +160,7 @@ def load_data(log_file_path: Path, project_name: str) -> dict:
     # Log file does NOT exist yet
     # Return a brand new structure
     #~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
+    
     return {
         "project": project_name,
         "users": {}   # username → {sessions: [...], active_session: ...}
@@ -176,5 +183,85 @@ def ensure_user(project_data: dict, username: str) -> dict:
         }
 
     return project_data
+
+
+
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~#
+#   ╔═╗┌─┐┬─┐┌─┐  ╔═╗┌─┐┌─┐┬─┐┌─┐┌┬┐┬┌─┐┌┐┌┌─┐      #
+#   ║  │ │├┬┘├┤   ║ ║├─┘├┤ ├┬┘├─┤ │ ││ ││││└─┐      #
+#   ╚═╝└─┘┴└─└─┘  ╚═╝┴  └─┘┴└─┴ ┴ ┴ ┴└─┘┘└┘└─┘      #
+#~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~#
+
+
+
+def clock_in(user_data: dict) -> dict:
+    
+    """
+    Start a new session for user.
+
+    Parameters:
+      user_data (dict): The dictionary for this specific user containing:
+                        - "active_session": ISO string or None
+                        - "sessions": list of past session dictionaries
+
+    Returns:
+      dict: The updated user_data dictionary with:
+            - active_session set to the current timestamp
+            - unchanged session history
+    """
+
+    if user_data.get("active_session") is not None:
+        print("\nAlready clocked in.")
+        print(f"Started at: {user_data['active_session']}\n")
+        return user_data
+
+    # Create new ISO timestamp for session start
+    now = datetime.now().isoformat(timespec="seconds")
+
+    # Set as current active session
+    user_data["active_session"] = now
+
+    print(f"\nClocked in at {now}\n")
+
+    return user_data
+
+
+def clock_out(user_data: dict) -> dict:
+    
+    """
+    End the current session and save it.
+
+    Returns:
+      dict: The updated user_data dictionary with:
+            - active_session set to None -> clocked out
+            - new session appended to sessions list
+    """
+
+    start = user_data.get("active_session")
+    if start is None:
+        print("\nYou are not currently clocked in.\n")
+        return user_data
+
+    end = datetime.now().isoformat(timespec="seconds")
+
+    # Convert stored ISO strings into datetime objects
+    start_dt = datetime.fromisoformat(start)
+    end_dt = datetime.fromisoformat(end)
+
+    duration_minutes = round((end_dt - start_dt).total_seconds() / 60, 2)
+
+    user_data["sessions"].append({
+        "start": start,
+        "end": end,
+        "duration_minutes": duration_minutes,
+    })
+
+    # Clear the active session
+    user_data["active_session"] = None
+
+    print(f"\nClocked out at {end}")
+    print(f"Session length: {duration_minutes} minutes\n")
+
+    return user_data
 
 
