@@ -265,3 +265,84 @@ def clock_out(user_data: dict) -> dict:
     return user_data
 
 
+def show_status(user_data: dict, username: str) -> None:
+    
+    """
+    Display whether the specified user is currently clocked in.
+
+    Parameters:
+      user_data (dict): The dictionary for this user containing:
+                        - "sessions": list of session records
+                        - "active_session": current start time or None
+      username (str):   The user whose summary is being displayed.
+
+    Returns:
+      None: This function only prints status information.
+    """
+
+    start = user_data.get("active_session")
+
+    if start:
+        print(f"\nStatus for {username}: Clocked in")
+        print(f"Started at: {start}\n")
+        return
+
+    print(f"\nStatus for {username}: Not clocked in\n")
+
+
+def show_summary(user_data: dict, username: str) -> None:
+    
+    """
+    Display total time and recent sessions for the specified user.
+    """
+
+    sessions = user_data.get("sessions", [])
+    if not sessions:
+        print(f"\nNo sessions logged yet for {username}.\n")
+        return
+
+    total_minutes = sum(s["duration_minutes"] for s in sessions)
+    total_hours = round(total_minutes / 60, 2)
+
+    print(f"\n=== Dev Time Summary for {username} ===")
+    print(f"Total sessions: {len(sessions)}")
+    print(f"Total minutes:  {total_minutes}")
+    print(f"Total hours:    {total_hours}")
+
+    print("\nLast 5 sessions:")
+    for s in sessions[-5:]:
+        print(f"  {s['start']} -> {s['end']}  ({s['duration_minutes']} min)")
+    print()
+
+
+def list_all_users_summary(data: dict) -> None:
+    """
+    Display total tracked time for all users in the project.
+
+    Parameters:
+      data (dict): The full project data containing:
+                   - "users": mapping of username → user_data dictionaries
+
+    Returns:
+      None: This function prints each user's total time and session count.
+    """
+
+    users = data.get("users", {})
+    if not users:
+        print("\nNo users found yet.\n")
+        return
+
+    print("\n=== All Users Summary (this project) ===")
+
+    for username, user_data in users.items():
+        sessions = user_data.get("sessions", [])
+        total_minutes = sum(s["duration_minutes"] for s in sessions)
+        total_hours = round(total_minutes / 60, 2)
+
+        print(
+            f"- {username}: {total_minutes} minutes "
+            f"({total_hours} hours, {len(sessions)} sessions)"
+        )
+
+    print()
+
